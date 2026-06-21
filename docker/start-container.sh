@@ -50,15 +50,99 @@ validate_user_command() {
   fi
 }
 
+bootstrap_app_if_needed() {
+  if [ -f "${SERVER_ROOT}/main.py" ] || [ -f "${SERVER_ROOT}/app.py" ] || \
+     [ -f "${SERVER_ROOT}/bot.py" ] || [ -f "${SERVER_ROOT}/requirements.txt" ] || \
+     [ -f "${SERVER_ROOT}/pyproject.toml" ] || [ -f "${SERVER_ROOT}/Pipfile" ]; then
+    return 0
+  fi
+
+  echo "[Startup] No Python project found. Creating minimal application..."
+  touch "${SERVER_ROOT}/requirements.txt"
+
+  cat > "${SERVER_ROOT}/main.py" << 'PYEOF'
+import http.server
+import os
+
+port = int(os.environ.get('PORT', 8080))
+
+class Handler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/plain; charset=utf-8')
+        self.end_headers()
+        self.wfile.write(b'Python app is running\n')
+
+    def log_message(self, *a):
+        pass
+
+print(f'Server listening on port {port}')
+with http.server.HTTPServer(('0.0.0.0', port), Handler) as server:
+    server.serve_forever()
+PYEOF
+}
+
+ensure_package_manager() {
+  local pm="${1:-pip}"
+  [ "${pm}" = "pip" ] && return 0
+  command -v "${pm}" >/dev/null 2>&1 && return 0
+  echo "[Startup] ${pm} not found. Installing via pip..."
+  pip install --quiet --no-cache-dir "${pm}"
+}
+
+auto_install_if_needed() {
+  local pm="${PACKAGE_MANAGER:-pip}"
+
+  if [ -d "${SERVER_ROOT}/packages" ] || [ -d "${SERVER_ROOT}/.venv" ]; then
+    return 0
+  fi
+
+  echo "[Startup] Packages not found. Running first-time install with ${pm}..."
+  ensure_package_manager "${pm}"
+
+  case "${pm}" in
+    pip)
+      if [ -f "${SERVER_ROOT}/requirements.txt" ]; then
+        pip install --no-cache-dir --target="${SERVER_ROOT}/packages" -r "${SERVER_ROOT}/requirements.txt"
+      elif [ -f "${SERVER_ROOT}/pyproject.toml" ]; then
+        pip install --no-cache-dir --target="${SERVER_ROOT}/packages" "${SERVER_ROOT}"
+      fi
+      ;;
+    uv)
+      if [ -f "${SERVER_ROOT}/requirements.txt" ]; then
+        uv pip install --no-cache --target="${SERVER_ROOT}/packages" -r "${SERVER_ROOT}/requirements.txt"
+      elif [ -f "${SERVER_ROOT}/pyproject.toml" ]; then
+        uv pip install --no-cache --target="${SERVER_ROOT}/packages" "${SERVER_ROOT}"
+      fi
+      ;;
+    poetry)
+      if [ -f "${SERVER_ROOT}/pyproject.toml" ]; then
+        poetry config virtualenvs.in-project true
+        poetry config cache-dir /tmp/poetry-cache
+        poetry install --no-interaction
+      fi
+      ;;
+    pipenv)
+      export PIPENV_VENV_IN_PROJECT=1
+      export PIPENV_CACHE_DIR=/tmp/pipenv-cache
+      if [ -f "${SERVER_ROOT}/Pipfile" ]; then
+        pipenv install --dev
+      elif [ -f "${SERVER_ROOT}/requirements.txt" ]; then
+        pipenv install --dev -r "${SERVER_ROOT}/requirements.txt"
+      fi
+      ;;
+  esac
+
+  echo "[Startup] First-time install complete."
+}
+
 setup_python_env() {
-  # pip/uv --target packages directory
   if [ -d "${SERVER_ROOT}/packages" ]; then
     export PYTHONPATH="${SERVER_ROOT}/packages${PYTHONPATH:+:${PYTHONPATH}}"
     export PATH="${SERVER_ROOT}/packages/bin:${PATH}"
     echo "[Startup] Packages loaded from ${SERVER_ROOT}/packages"
   fi
 
-  # poetry/pipenv in-project virtual environment
   if [ -d "${SERVER_ROOT}/.venv/bin" ]; then
     local sys_python
     sys_python="$(command -v python3 2>/dev/null || true)"
@@ -107,6 +191,8 @@ run_python_app() {
 }
 
 ensure_runtime_tools
+bootstrap_app_if_needed
+auto_install_if_needed
 setup_python_env
 resolve_start_command
 run_build_on_start_if_enabled
