@@ -93,16 +93,16 @@ python -m flask run --host 0.0.0.0 --port ${PORT}
 ## Build and publish images
 
 ```bash
-docker build --build-arg PYTHON_VERSION=3.10 -t ghcr.io/lias1n/python-egg:py310 .
-docker build --build-arg PYTHON_VERSION=3.11 -t ghcr.io/lias1n/python-egg:py311 .
-docker build --build-arg PYTHON_VERSION=3.12 -t ghcr.io/lias1n/python-egg:py312 .
-docker build --build-arg PYTHON_VERSION=3.13 -t ghcr.io/lias1n/python-egg:py313 .
+docker build --build-arg PYTHON_VERSION=3.10 -t ghcr.io/meltonq/deplion-python-egg:py310 .
+docker build --build-arg PYTHON_VERSION=3.11 -t ghcr.io/meltonq/deplion-python-egg:py311 .
+docker build --build-arg PYTHON_VERSION=3.12 -t ghcr.io/meltonq/deplion-python-egg:py312 .
+docker build --build-arg PYTHON_VERSION=3.13 -t ghcr.io/meltonq/deplion-python-egg:py313 .
 ```
 
 ```bash
 echo <GITHUB_TOKEN> | docker login ghcr.io -u <GITHUB_USERNAME> --password-stdin
-docker push ghcr.io/lias1n/python-egg:py310
-docker push ghcr.io/lias1n/python-egg:py311
-docker push ghcr.io/lias1n/python-egg:py312
-docker push ghcr.io/lias1n/python-egg:py313
+docker push ghcr.io/meltonq/deplion-python-egg:py310
+docker push ghcr.io/meltonq/deplion-python-egg:py311
+docker push ghcr.io/meltonq/deplion-python-egg:py312
+docker push ghcr.io/meltonq/deplion-python-egg:py313
 ```
