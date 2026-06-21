@@ -15,13 +15,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && useradd -m -d /home/container container
 
+COPY docker/start-container.sh /usr/local/bin/start-container.sh
+RUN chmod +x /usr/local/bin/start-container.sh
+
 USER container
 ENV USER=container HOME=/home/container
 WORKDIR /mnt/server
-
-COPY docker/start-container.sh /usr/local/bin/start-container.sh
-
-RUN chmod +x /usr/local/bin/start-container.sh
 
 EXPOSE 8080
 
