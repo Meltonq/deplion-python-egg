@@ -5,6 +5,8 @@ TZ=${TZ:-UTC}
 export TZ
 
 SERVER_ROOT="/home/container"
+echo "[Startup] Entrypoint reached as $(id -un 2>/dev/null || whoami) in $(pwd)"
+echo "[Startup] Server root: ${SERVER_ROOT}"
 cd "${SERVER_ROOT}"
 
 ensure_runtime_tools() {

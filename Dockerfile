@@ -23,4 +23,4 @@ WORKDIR /mnt/server
 
 EXPOSE 8080
 
-CMD ["/usr/local/bin/start-container.sh"]
+CMD ["bash", "/usr/local/bin/start-container.sh"]
