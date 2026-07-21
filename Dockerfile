@@ -18,7 +18,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY docker/start-container.sh /usr/local/bin/start-container.sh
 RUN chmod +x /usr/local/bin/start-container.sh
 
-USER container
 ENV USER=container HOME=/home/container
 WORKDIR /mnt/server
 

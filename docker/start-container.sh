@@ -57,26 +57,41 @@ bootstrap_app_if_needed() {
   fi
 
   echo "[Startup] No Python entrypoint found. Creating minimal online application..."
-  [ -f "${SERVER_ROOT}/requirements.txt" ] || touch "${SERVER_ROOT}/requirements.txt"
+  if [ ! -f "${SERVER_ROOT}/requirements.txt" ]; then
+    cat > "${SERVER_ROOT}/requirements.txt" << 'REQEOF'
+# Hello World bot template.
+# No external Python packages are required.
+REQEOF
+  fi
 
   cat > "${SERVER_ROOT}/main.py" << 'PYEOF'
 import http.server
 import os
+import threading
+import time
 
 port = int(os.environ.get('PORT', 8080))
+bot_name = os.environ.get('BOT_NAME', 'HelloWorldBot')
 
 class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-Type', 'text/plain; charset=utf-8')
         self.end_headers()
-        self.wfile.write(b'Python app is running\n')
+        self.wfile.write(f'{bot_name} is online\n'.encode())
 
     def log_message(self, *a):
         pass
 
-print(f'Server listening on port {port}')
-with http.server.HTTPServer(('0.0.0.0', port), Handler) as server:
+def bot_loop():
+    while True:
+        print(f'{bot_name}: hello world heartbeat', flush=True)
+        time.sleep(60)
+
+threading.Thread(target=bot_loop, daemon=True).start()
+
+print(f'{bot_name} is online on port {port}', flush=True)
+with http.server.ThreadingHTTPServer(('0.0.0.0', port), Handler) as server:
     server.serve_forever()
 PYEOF
 }
@@ -102,15 +117,19 @@ auto_install_if_needed() {
   case "${pm}" in
     pip)
       if [ -f "${SERVER_ROOT}/requirements.txt" ]; then
+        mkdir -p "${SERVER_ROOT}/packages"
         pip install --no-cache-dir --target="${SERVER_ROOT}/packages" -r "${SERVER_ROOT}/requirements.txt"
       elif [ -f "${SERVER_ROOT}/pyproject.toml" ]; then
+        mkdir -p "${SERVER_ROOT}/packages"
         pip install --no-cache-dir --target="${SERVER_ROOT}/packages" "${SERVER_ROOT}"
       fi
       ;;
     uv)
       if [ -f "${SERVER_ROOT}/requirements.txt" ]; then
+        mkdir -p "${SERVER_ROOT}/packages"
         uv pip install --no-cache --target="${SERVER_ROOT}/packages" -r "${SERVER_ROOT}/requirements.txt"
       elif [ -f "${SERVER_ROOT}/pyproject.toml" ]; then
+        mkdir -p "${SERVER_ROOT}/packages"
         uv pip install --no-cache --target="${SERVER_ROOT}/packages" "${SERVER_ROOT}"
       fi
       ;;
