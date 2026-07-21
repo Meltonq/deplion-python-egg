@@ -72,7 +72,7 @@ import os
 import threading
 import time
 
-port = int(os.environ.get('PORT', 8080))
+raw_port = os.environ.get('PORT') or os.environ.get('SERVER_PORT') or '8080'
 bot_name = os.environ.get('BOT_NAME', 'HelloWorldBot')
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -90,11 +90,18 @@ def bot_loop():
         print(f'{bot_name}: hello world heartbeat', flush=True)
         time.sleep(60)
 
-threading.Thread(target=bot_loop, daemon=True).start()
+def http_loop():
+    try:
+        port = int(raw_port)
+        with http.server.ThreadingHTTPServer(('0.0.0.0', port), Handler) as server:
+            print(f'{bot_name} HTTP check is online on port {port}', flush=True)
+            server.serve_forever()
+    except Exception as exc:
+        print(f'{bot_name} HTTP check disabled: {exc}', flush=True)
 
-print(f'{bot_name} is online on port {port}', flush=True)
-with http.server.ThreadingHTTPServer(('0.0.0.0', port), Handler) as server:
-    server.serve_forever()
+threading.Thread(target=http_loop, daemon=True).start()
+print(f'{bot_name} is online', flush=True)
+bot_loop()
 PYEOF
 }
 
