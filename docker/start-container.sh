@@ -52,13 +52,12 @@ validate_user_command() {
 
 bootstrap_app_if_needed() {
   if [ -f "${SERVER_ROOT}/main.py" ] || [ -f "${SERVER_ROOT}/app.py" ] || \
-     [ -f "${SERVER_ROOT}/bot.py" ] || [ -f "${SERVER_ROOT}/requirements.txt" ] || \
-     [ -f "${SERVER_ROOT}/pyproject.toml" ] || [ -f "${SERVER_ROOT}/Pipfile" ]; then
+     [ -f "${SERVER_ROOT}/bot.py" ]; then
     return 0
   fi
 
-  echo "[Startup] No Python project found. Creating minimal application..."
-  touch "${SERVER_ROOT}/requirements.txt"
+  echo "[Startup] No Python entrypoint found. Creating minimal online application..."
+  [ -f "${SERVER_ROOT}/requirements.txt" ] || touch "${SERVER_ROOT}/requirements.txt"
 
   cat > "${SERVER_ROOT}/main.py" << 'PYEOF'
 import http.server
