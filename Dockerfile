@@ -16,11 +16,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && useradd -m -d /home/container container
 
 COPY docker/start-container.sh /usr/local/bin/start-container.sh
-RUN chmod +x /usr/local/bin/start-container.sh
+RUN sed -i 's/\r$//' /usr/local/bin/start-container.sh \
+    && chmod +x /usr/local/bin/start-container.sh
 
 ENV USER=container HOME=/home/container
 WORKDIR /mnt/server
 
 EXPOSE 8080
 
-CMD ["/usr/local/bin/start-container.sh"]
+CMD ["bash", "/usr/local/bin/start-container.sh"]

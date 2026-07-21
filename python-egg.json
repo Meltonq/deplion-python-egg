@@ -18,7 +18,7 @@
         "Python 3.13": "ghcr.io/meltonq/deplion-python-egg:py313"
     },
     "file_denylist": [],
-    "startup": "/usr/local/bin/start-container.sh",
+    "startup": "bash /usr/local/bin/start-container.sh",
     "config": {
         "files": "{}",
         "startup": "{\n    \"done\": \"Python application started\"\n}",
