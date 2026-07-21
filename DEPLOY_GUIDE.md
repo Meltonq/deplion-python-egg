@@ -51,6 +51,25 @@ python -m flask run --host 0.0.0.0 --port ${PORT}
 
 ## Troubleshooting FAQ
 
+### Docker error: failed to bind port / cannot assign requested address
+
+Example:
+
+```text
+failed to bind port 51.75.37.31:22002/tcp: listen tcp4 51.75.37.31:22002: bind: cannot assign requested address
+```
+
+This happens before the Python egg starts. Docker is trying to publish the container port on a host IP address that is not assigned to the node.
+
+Fix it in the panel/node network configuration:
+
+- In Pterodactyl, check the node allocation for the server.
+- Replace the allocation IP with an IP that exists on the host, or use `0.0.0.0` if the panel setup expects wildcard binding.
+- Make sure port `22002` is free on that host.
+- Restart the server after changing the allocation.
+
+Do not set the Python app to bind to the public node IP. Inside the container, web apps should listen on `0.0.0.0` and the `PORT` environment variable.
+
 ### 1) Приложение не стартует
 
 Проверь:

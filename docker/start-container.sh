@@ -67,12 +67,38 @@ REQEOF
   fi
 
   cat > "${SERVER_ROOT}/main.py" << 'PYEOF'
+import http.server
 import os
+import socketserver
+import threading
 import time
 
 bot_name = os.environ.get('BOT_NAME', 'HelloWorldBot')
+port = int(os.environ.get('PORT', '8080'))
 
 print(f'{bot_name} is online', flush=True)
+
+class HealthHandler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        body = f'{bot_name} is online\n'.encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/plain; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, format, *args):
+        return
+
+class ReusableTCPServer(socketserver.TCPServer):
+    allow_reuse_address = True
+
+def serve_health():
+    with ReusableTCPServer(('0.0.0.0', port), HealthHandler) as httpd:
+        print(f'{bot_name}: health server listening on 0.0.0.0:{port}', flush=True)
+        httpd.serve_forever()
+
+threading.Thread(target=serve_health, daemon=True).start()
 
 while True:
     print(f'{bot_name}: hello world heartbeat', flush=True)
